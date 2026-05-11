@@ -306,6 +306,10 @@ async def register_participant(
 
     if existing.data:
         participant = existing.data[0]
+        # Update email for existing participant
+        supabase.table("participants").update(
+            {"email": email}
+        ).eq("participant_id", participant["participant_id"]).execute()
     else:
         p_res = (
             supabase.table("participants")
