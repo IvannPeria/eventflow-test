@@ -13,14 +13,16 @@ export function AuthProvider({ children }) {
   const isAuthenticated = Boolean(user);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      setUser(raw ? JSON.parse(raw) : null);
-    } catch {
-      setUser(null);
-    }
-    setReady(true);
-  }, []);
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    // Make sure it's actually a user object, not a primitive
+    setUser(parsed && typeof parsed === "object" ? parsed : null);
+  } catch {
+    setUser(null);
+  }
+  setReady(true);
+}, []);
 
   const login = useCallback(async (username, password) => {
     const res = await fetch("/api/auth/login", {
