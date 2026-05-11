@@ -1,0 +1,25 @@
+# EventFlow - Facial Recognition Module
+# requirements.txt
+# Compatible with Render.com (Ubuntu Linux, Python 3.11)
+
+# ── API server ────────────────────────────────────────────────────────────────
+fastapi==0.115.0
+uvicorn==0.30.6
+python-multipart==0.0.12
+
+# ── Face recognition ──────────────────────────────────────────────────────────
+insightface==0.7.3
+onnxruntime==1.19.2
+
+# ── Image processing ──────────────────────────────────────────────────────────
+# IMPORTANT: use opencv-python-headless on servers (no GUI needed)
+opencv-python-headless==4.10.0.84
+numpy==1.26.4
+
+# ── Database ──────────────────────────────────────────────────────────────────
+supabase==2.7.4
+
+# ── Utilities ─────────────────────────────────────────────────────────────────
+python-dotenv==1.0.1
+Pillow==10.4.0
+scipy==1.13.1
