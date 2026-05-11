@@ -86,7 +86,7 @@ def reload_gallery() -> None:
         supabase.table("face_embeddings")
         .select(
             "embedding_id, participant_id, embedding, event_id, "
-            "participants(participant_id, name, student_id)"
+            "participants(participant_id, name, student_id, email)"
         )
         .eq("is_active", True)
         .eq("event_id", event_id)
@@ -105,6 +105,7 @@ def reload_gallery() -> None:
             "participant_id": row["participants"]["participant_id"],
             "name":           row["participants"]["name"],
             "student_id":     row["participants"]["student_id"],
+            "email":          row["participants"].get("email", ""),
             "embedding":      emb / norm,
         })
 
@@ -255,6 +256,7 @@ def trigger_reload():
 async def register_participant(
     name:       str        = Form(...),
     student_id: str        = Form(...),
+    email:      str        = Form(...),
     image:      UploadFile = File(...),
     event_id:   Optional[int] = Form(None),
 ):
@@ -307,7 +309,7 @@ async def register_participant(
     else:
         p_res = (
             supabase.table("participants")
-            .insert({"name": name, "student_id": student_id})
+            .insert({"name": name, "student_id": student_id, "email": email})
             .execute()
         )
         participant = p_res.data[0]
@@ -459,6 +461,7 @@ async def verify_participant(
             "verified":       True,
             "name":           match["name"],
             "student_id":     match["student_id"],
+            "email":          match.get("email", ""),
             "participant_id": match["participant_id"],
             "similarity":     round(score, 4),
             "threshold":      engine.threshold,

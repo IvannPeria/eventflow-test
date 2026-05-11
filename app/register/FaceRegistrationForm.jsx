@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, User, IdCard, ArrowRight } from "lucide-react";
+import { Camera, User, IdCard, ArrowRight, Mail } from "lucide-react";
 import { Input } from "@/components/ui/Input";
 import { Button } from "@/components/ui/Button";
 import { createClient } from "@/utils/supabase/client";
@@ -13,6 +13,7 @@ export function FaceRegistrationForm() {
   const canvasRef = useRef(null);
   const [name, setName] = useState("");
   const [studentId, setStudentId] = useState("");
+  const [email, setEmail] = useState("");
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState("");
   const [eventsLoading, setEventsLoading] = useState(true);
@@ -97,7 +98,7 @@ export function FaceRegistrationForm() {
     e.preventDefault();
     setError("");
 
-    if (!name || !studentId || !capturedImage || !selectedEvent) {
+    if (!name || !studentId || !email || !capturedImage || !selectedEvent) {
       setError("Please fill all fields, select an event, and capture your face.");
       return;
     }
@@ -111,6 +112,7 @@ export function FaceRegistrationForm() {
         body: JSON.stringify({
           name,
           studentId,
+          email,
           eventId: selectedEvent,
           image: capturedImage,
         }),
@@ -155,6 +157,17 @@ export function FaceRegistrationForm() {
           leftIcon={IdCard}
           value={studentId}
           onChange={(e) => setStudentId(e.target.value)}
+          required
+        />
+
+        <Input
+          label="Email Address"
+          name="email"
+          type="email"
+          placeholder="Enter your email address"
+          leftIcon={Mail}
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
           required
         />
 

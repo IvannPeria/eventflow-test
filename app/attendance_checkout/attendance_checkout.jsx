@@ -9,18 +9,6 @@ const CAPTURE_INTERVAL_MS = 1500;
 const RESULT_HOLD_MS = 3500;
 const WARMUP_MS = 1500;
 
-const ATTENDEE_EMAILS_KEY = "eventflow-attendee-emails"; // { [eventId]: { [studentId]: email } }
-
-function loadEmailMap() {
-  try {
-    const raw = localStorage.getItem(ATTENDEE_EMAILS_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
 export function AttendanceCheckout({ eventName = "Event" }) {
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -34,7 +22,6 @@ export function AttendanceCheckout({ eventName = "Event" }) {
   const [events, setEvents] = useState([]);
   const [selectedEvent, setSelectedEvent] = useState("");
   const [checkedOut, setCheckedOut] = useState([]);
-  const [emailMap, setEmailMap] = useState(() => (typeof window === "undefined" ? {} : loadEmailMap()));
   const [notice, setNotice] = useState("");
 
   useEffect(() => {
@@ -90,11 +77,8 @@ export function AttendanceCheckout({ eventName = "Event" }) {
   );
 
   const attendeeEmail = useMemo(() => {
-    const sid = String(result?.student_id || "");
-    const eid = String(selectedEvent || "");
-    if (!sid || !eid) return "";
-    return String(emailMap?.[eid]?.[sid] || "");
-  }, [emailMap, result?.student_id, selectedEvent]);
+    return String(result?.email || "");
+  }, [result?.email]);
 
   const captureAndVerify = useCallback(async () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -134,9 +118,7 @@ export function AttendanceCheckout({ eventName = "Event" }) {
       setResult(data);
       setStatus("verified");
 
-      if (!attendeeEmail) {
-        setNotice("No email found for this attendee. Please add email during Check-in first.");
-      } else {
+      if (attendeeEmail) {
         await fetch("/api/attendance/checkout", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -151,6 +133,8 @@ export function AttendanceCheckout({ eventName = "Event" }) {
           }),
         });
         setNotice("Check-out verified. Certificate email will be sent if configured.");
+      } else {
+        setNotice("Check-out verified. No email available for certificate.");
       }
 
       setCheckedOut((prev) => {

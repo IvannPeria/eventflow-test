@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback, useMemo } from "react";
-import { CheckCircle, XCircle, Camera, Loader2, Mail, Users } from "lucide-react";
+import { CheckCircle, XCircle, Camera, Loader2, Users } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { mockEvents } from "@/lib/mockEvents";
 
@@ -9,32 +9,6 @@ import { mockEvents } from "@/lib/mockEvents";
 const CAPTURE_INTERVAL_MS = 1500;   // how often to auto-capture a frame (ms)
 const RESULT_HOLD_MS      = 3500;   // how long to show result before resetting
 const WARMUP_MS           = 1500;   // delay before starting capture after mount
-
-const ATTENDEE_EMAILS_KEY = "eventflow-attendee-emails"; // { [eventId]: { [studentId]: email } }
-
-function loadEmailMap() {
-  try {
-    const raw = localStorage.getItem(ATTENDEE_EMAILS_KEY);
-    const parsed = raw ? JSON.parse(raw) : {};
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-}
-
-function saveEmailMap(next) {
-  try {
-    localStorage.setItem(ATTENDEE_EMAILS_KEY, JSON.stringify(next));
-  } catch {
-    /* ignore */
-  }
-}
-
-function isValidEmail(value) {
-  const v = String(value || "").trim();
-  if (!v) return false;
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
-}
 
 // ── Status types ──────────────────────────────────────────────────────────────────
 // idle       → waiting, scanning for a face
@@ -56,8 +30,6 @@ export function AttendanceScanner({ eventName = "Event" }) {
   const [isWarmedUp,    setIsWarmedUp]    = useState(false);
   const [events,        setEvents]        = useState([]);
   const [selectedEvent, setSelectedEvent] = useState("");
-  const [emailMap,      setEmailMap]      = useState(() => (typeof window === "undefined" ? {} : loadEmailMap()));
-  const [emailSaved,    setEmailSaved]    = useState(false);
 
   // ── Camera setup ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -156,7 +128,6 @@ export function AttendanceScanner({ eventName = "Event" }) {
       if (data.verified) {
         setResult(data);
         setStatus("verified");
-        setEmailSaved(false);
         setCheckedIn((prev) => {
           // Avoid duplicate entries in the session list
           if (prev.find((p) => p.student_id === data.student_id)) return prev;
@@ -176,38 +147,12 @@ export function AttendanceScanner({ eventName = "Event" }) {
       resetTimerRef.current = setTimeout(() => {
         setStatus("idle");
         setResult(null);
-        setEmailSaved(false);
       }, RESULT_HOLD_MS);
 
     } catch {
       setStatus("idle");
     }
   }, [selectedEvent]);
-
-  const attendeeEmail = useMemo(() => {
-    const eid = String(selectedEvent || "");
-    const sid = String(result?.student_id || "");
-    if (!eid || !sid) return "";
-    return String(emailMap?.[eid]?.[sid] || "");
-  }, [emailMap, result?.student_id, selectedEvent]);
-
-  const setAttendeeEmail = useCallback(
-    (value) => {
-      const eid = String(selectedEvent || "");
-      const sid = String(result?.student_id || "");
-      if (!eid || !sid) return;
-      setEmailSaved(false);
-      setEmailMap((prev) => {
-        const next = { ...(prev || {}) };
-        const byEvent = { ...(next[eid] || {}) };
-        byEvent[sid] = value;
-        next[eid] = byEvent;
-        saveEmailMap(next);
-        return next;
-      });
-    },
-    [result?.student_id, selectedEvent],
-  );
 
   // ── Auto-capture loop ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -353,32 +298,6 @@ export function AttendanceScanner({ eventName = "Event" }) {
                     <p className="mt-1 text-xs text-green-400">
                       Confidence: {(result.similarity * 100).toFixed(1)}%
                     </p>
-
-                    <div className="mt-4 rounded-lg border border-white/10 bg-white/5 p-3 text-left">
-                      <label className="block text-[10px] font-semibold uppercase tracking-widest text-on-surface-variant">
-                        Email (for certificate)
-                      </label>
-                      <div className="mt-2 flex items-center gap-2">
-                        <Mail className="size-4 text-surface-tint" />
-                        <input
-                          value={attendeeEmail}
-                          onChange={(e) => setAttendeeEmail(e.target.value)}
-                          onBlur={() => setEmailSaved(true)}
-                          placeholder="name@gmail.com"
-                          type="email"
-                          className="w-full rounded-lg border border-white/10 bg-transparent px-3 py-2 text-sm text-on-background placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-surface-tint/30"
-                        />
-                      </div>
-                      {attendeeEmail && !isValidEmail(attendeeEmail) ? (
-                        <p className="mt-2 text-xs text-error">Please enter a valid email.</p>
-                      ) : emailSaved && attendeeEmail ? (
-                        <p className="mt-2 text-xs text-emerald-300">Saved.</p>
-                      ) : (
-                        <p className="mt-2 text-xs text-on-surface-variant">
-                          This will be used during attendance check-out to send the certificate.
-                        </p>
-                      )}
-                    </div>
                   </>
                 ) : (
                   <>
