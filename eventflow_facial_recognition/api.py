@@ -256,7 +256,7 @@ def trigger_reload():
 async def register_participant(
     name:       str        = Form(...),
     student_id: str        = Form(...),
-    email:      str        = Form(...),
+    email:      str        = Form(""),
     image:      UploadFile = File(...),
     event_id:   Optional[int] = Form(None),
 ):
@@ -313,7 +313,7 @@ async def register_participant(
     else:
         p_res = (
             supabase.table("participants")
-            .insert({"name": name, "student_id": student_id, "email": email})
+            .insert({"name": name, "student_id": student_id, "email": email})  # ← add email
             .execute()
         )
         participant = p_res.data[0]

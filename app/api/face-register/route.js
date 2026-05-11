@@ -18,7 +18,7 @@ export async function POST(request) {
     const formData = new FormData();
     formData.append("name",       name);
     formData.append("student_id", studentId);
-    formData.append("email",      email);
+    formData.append("email",      email || "");
     formData.append("event_id",   String(eventId));
     formData.append(
       "image",
